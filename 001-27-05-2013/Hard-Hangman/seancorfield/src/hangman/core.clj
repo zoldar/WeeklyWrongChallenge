@@ -71,7 +71,7 @@
       (cond  (= (count correct) (count (set word)))
              (println "Congratulations! You guessed my word!\nLet's play again!")
              (= (inc bad-guesses) (count full-gallows))
-             (println "You're hanged! Let's play again!")
+             (println "You're hanged! My word was:" word "\nLet's play again!")
              :else
              (do
                (println "Enter your guess or type quit:")
