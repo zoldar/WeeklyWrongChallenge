@@ -79,8 +79,12 @@
                  (if (correct? word letter)
                    (do
                      (println "Correct!")
-                     (recur (conj guesses letter) (conj correct letter) bad-guesses))
+                     (recur (conj guesses letter)
+                            (conj correct letter)
+                            bad-guesses))
                    (do
                      (println "Nope!")
-                     (recur (conj guesses letter) correct (inc bad-guesses))))))))
+                     (recur (conj guesses letter)
+                            correct
+                            (if (guesses letter) bad-guesses (inc bad-guesses)))))))))
     (recur (choose-word))))
