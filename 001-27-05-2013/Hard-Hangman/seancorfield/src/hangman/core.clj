@@ -60,7 +60,9 @@
 (defn -main
   "The game of Hangman"
   [& args]
+  (println "Welcome to Hangman!\n")
   (loop [word (choose-word)]
+    (println "I've chosen a random word. Try to guess it!")
     (loop [guesses #{}
            correct #{}
            bad-guesses 0]
