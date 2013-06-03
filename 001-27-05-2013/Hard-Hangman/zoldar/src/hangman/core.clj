@@ -4,7 +4,7 @@
 ;; Game logic
 
 ;; Example of data structure representing game state
-(def ^:private game {:mistakes 0 :word [\h \a \n \d] :guess [:_ :_ :_ :_]})
+(def ^:private game {:mistakes 0 :word [\h \a \n \d] :guess [:_ :_ :_ :_] :inputs #{}})
 
 (defn game-lost? [{:keys [mistakes]}]
   (>= mistakes 9))
@@ -18,11 +18,12 @@
 (defn fill-gaps [word guess input]
   (map (fn [w-char g-char] (if (= w-char input) input g-char)) word guess))
 
-(defn make-guess [{:keys [mistakes word guess] :as game} input]
-  (let [new-guess (fill-gaps word guess input)]
-    (if (= new-guess guess)
-      (assoc game :mistakes (inc mistakes))
-      (assoc game :guess new-guess))))
+(defn make-guess [{:keys [mistakes word guess inputs] :as game} input]
+  (let [new-guess (fill-gaps word guess input)
+        new-inputs (conj inputs input)]
+    (if (and (= new-guess guess) (not (inputs input)))
+      (assoc game :mistakes (inc mistakes) :inputs new-inputs)
+      (assoc game :guess new-guess :inputs new-inputs))))
 
 (defn game-step [inputs game]
   (let [[input inputs] ((juxt first rest) inputs)]
@@ -33,7 +34,7 @@
 (defn create-game [word inputs]
   (let [word-seq (seq word)
         initial-guess (repeat (count word-seq) :_)
-        initial-game {:mistakes 0 :word word-seq :guess initial-guess}]
+        initial-game {:mistakes 0 :word word-seq :guess initial-guess :inputs #{}}]
     (cons initial-game (lazy-seq (game-step inputs initial-game)))))
 
 ;; UI code
@@ -71,9 +72,10 @@
   (let [new-guess (map #(if (keyword? %) (name %) %) guess)]
     (apply str (interleave new-guess (repeat " ")))))
 
-(defn display-state [{:keys [mistakes guess] :as game-stage}]
+(defn display-state [{:keys [mistakes guess inputs] :as game-stage}]
   (println (nth full-gallows mistakes))
-  (println (str "Current guess: " (render-guess guess))))
+  (println (str "Current guess: " (render-guess guess)))
+  (println (str "Letters used so far: " (apply str (-> inputs sort (interleave (repeat " ")))))))
 
 (defn end-game-success [game-stage]
   (display-state game-stage)
