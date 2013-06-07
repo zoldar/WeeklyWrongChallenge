@@ -11,12 +11,15 @@
 (defn zero-str? [a]
   (= (count a) 0))
 
+(defn leve-dist [a b]
+  (apply + (map #(compare-pants %1 %2) a b)))
+
 (defn shtein-dist [a b]
   (if (or (zero-str? a) (zero-str? b))
     (max (count a) (count b))
     (if (> (count a) (count b))
-      (apply + (map #(compare-pants %1 %2) a b))
-      (apply + (map #(compare-pants %1 %2) b a)))))
+      (leve-dist a b))
+      (leve-dist b a)))
 
 (zero-str? "")
 (zero-str? str3)
