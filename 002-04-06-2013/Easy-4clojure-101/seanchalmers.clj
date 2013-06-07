@@ -18,8 +18,8 @@
   (if (or (zero-str? a) (zero-str? b))
     (max (count a) (count b))
     (if (> (count a) (count b))
-      (leve-dist a b))
-      (leve-dist b a)))
+      (leve-dist a b)
+      (leve-dist b a))))
 
 (zero-str? "")
 (zero-str? str3)
