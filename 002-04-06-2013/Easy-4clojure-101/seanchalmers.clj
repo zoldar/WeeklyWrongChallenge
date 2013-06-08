@@ -5,21 +5,31 @@
 
 (def str3 "FooFooFoo")
 
-(defn compare-pants [a b]
-  (if (= a b) 0 1))
-
 (defn zero-str? [a]
   (= (count a) 0))
 
 (defn leve-dist [a b]
-  (apply + (map #(compare-pants %1 %2) a b)))
+  (apply + (map #(if (= %1 %2) 0 1) a b)))
 
+;; Calculate the Levenshtein Distance between two strings.
 (defn shtein-dist [a b]
-  (if (or (zero-str? a) (zero-str? b))
-    (max (count a) (count b))
-    (if (> (count a) (count b))
-      (leve-dist a b)
-      (leve-dist b a))))
+  ;; For Convience keep a count of the length of the strings.
+  (let [countA (count a)
+        countB (count b)]
+    ;; Handle the input of empty strings.
+    (if (or (zero-str? a) (zero-str? b))
+      ;; Doesn't matter which is zero because the length
+      ;; of the other string will be the distance between.
+      (max countA countB)
+      (if (> countA countB)
+        ;; My solution only works if the map runs over the
+        ;; longer of the two input strings.
+        (leve-dist a b)
+        (leve-dist b a)))))
+
+;;;;;;;;;;
+;; Some random test cases.
+;;;;;;;;;;
 
 (zero-str? "")
 (zero-str? str3)
