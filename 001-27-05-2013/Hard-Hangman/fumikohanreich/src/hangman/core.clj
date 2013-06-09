@@ -8,7 +8,8 @@
 (def wildcard "_")
 
 (def hangman-drawing 
-  {1 (str "\n\n\n\n\n |" "\n |" "\n |" "\n |" 
+  {0 (str "\n8 turns remaining\n")
+   1 (str "\n\n\n\n\n |" "\n |" "\n |" "\n |" 
               "\n\n 7 turns remaining\n")
    2 (str "\n\n |" "\n |" "\n |" "\n |" "\n |" "\n |" "\n |"
               "\n\n 6 turns remaining\n")
@@ -50,7 +51,7 @@
    return a newly unvailed word."
   [secret unvailed char]
   (->> (map #(if (= % char) char wildcard) secret)
-       (apply str )
+       (apply str)
        (mask unvailed)))
 
 (defn- prompt
@@ -81,12 +82,13 @@
    and turns as a positive integer
    repeatedly ask a user until his/her guess matches with the secret word."
   [input secret unvailed turns]
-  (let [unvailed (unvail secret unvailed (first input))
-        match?   (match? input secret unvailed)]
-    (if (or match? (>= turns (count hangman-drawing)))
+  (let [first-char (first input)
+        unvailed   (unvail secret unvailed (first input))
+        match?     (match? input secret unvailed)
+        turns      (if (some #(= first-char %) secret) turns (inc turns))]
+    (if (or match? (>= turns (dec (count hangman-drawing))))
       match?
-      (hangman-game (read-guess secret unvailed turns) secret unvailed (inc turns)))))
-
+      (hangman-game (read-guess secret unvailed turns) secret unvailed turns))))
 
 (defn -main [& args]
   (let [options (cli args (optional ["-secret" "secret word or phrase" :default (secret)]))
@@ -97,7 +99,7 @@
                  "The secret word is " hint "\n"
                  "Please enter a word or a character.\n"))
     
-    (if (hangman-game (read-line) secret hint 1)
+    (if (hangman-game (read-line) secret hint 0)
       (prompt (str "You won! " secret))
       (prompt (str (second (last hangman-drawing)) 
                    "\n\nSorry, you lost :(  The secret word was " secret ". Try again :)")))))
