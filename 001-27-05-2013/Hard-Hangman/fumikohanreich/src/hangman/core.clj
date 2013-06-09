@@ -79,8 +79,9 @@
 
 (defn- hangman-game
   "Given user input, secret word, already unvailed word,
-   and turns as a positive integer
-   repeatedly ask a user until his/her guess matches with the secret word."
+   and turns as a positive integer,
+   returns true when a user won the game; false, otherwise,
+   while repeatedly asking the user until his/her guessess the secret word."
   [input secret unvailed turns]
   (let [first-char (first input)
         unvailed   (unvail secret unvailed (first input))
