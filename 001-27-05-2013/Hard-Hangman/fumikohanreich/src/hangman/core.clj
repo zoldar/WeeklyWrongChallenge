@@ -68,15 +68,18 @@
   (or (= secret input) (= secret unvailed))))
 
 (defn- read-guess
-  "Given unvailed word (partially guessed secret word),
-   prompt a user and read the next line."
+  "Given secret word, unvailed word (partially guessed secret word), 
+   and turns as a positive integer,
+   println hangman drawing if previously missed,
+   prompt a user, and read the next line."
   [secret unvailed turns]
   (do (when-not (match? secret unvailed) (println (hangman-drawing turns)))
       (prompt (str "The unvailed word is " unvailed  ". Please enter again."))
       (read-line)))
 
 (defn- hangman-game
-  "Given user input, secret word, and already unvailed word,
+  "Given user input, secret word, already unvailed word,
+   and turns as a positive integer
    repeatedly ask a user until his/her guess matches with the secret word."
   [input secret unvailed turns]
   (let [unvailed (unvail secret unvailed (first input))
