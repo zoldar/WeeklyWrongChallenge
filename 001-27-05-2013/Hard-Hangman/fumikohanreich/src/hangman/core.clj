@@ -99,6 +99,7 @@
     
     (if (hangman-game (read-line) secret hint 1)
       (prompt (str "You won! " secret))
-      (prompt (str "Sorry, you lost :(  The secret word was " secret ". Try again :)")))))
+      (prompt (str (second (last hangman-drawing)) 
+                   "\n\nSorry, you lost :(  The secret word was " secret ". Try again :)")))))
 
 
