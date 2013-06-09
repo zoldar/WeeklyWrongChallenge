@@ -24,9 +24,8 @@
               "\n\n only 1 more turn, that's it!\n")
    8 (str " _______\n" " |     |\n" " |     |\n" " |     O\n" " |     /\\" "\n |     |" "\n |     /\\" "\n |")})
 
-;; (defn- not-wildcard?
-;;   [c]
-;;   (not (= c wildcard)))
+;; (defn- not-wildcard? [c]
+;;   (not= c wildcard))
 
 ;(defn f [c1 c2]
 ; (cond (not-wildcard? c1) c1 
