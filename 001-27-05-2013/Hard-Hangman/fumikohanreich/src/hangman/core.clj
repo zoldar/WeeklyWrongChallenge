@@ -46,13 +46,13 @@
       (map char)
       (apply str)))
 
-(defn- unvail
-  "Given secret word, already unvailed word, and a char,
-   return a newly unvailed word."
-  [secret unvailed char]
+(defn- unveil
+  "Given secret word, already unveiled word, and a char,
+   return a newly unveiled word."
+  [secret unveiled char]
   (->> (map #(if (= % char) char wildcard) secret)
        (apply str)
-       (mask unvailed)))
+       (mask unveiled)))
 
 (defn- prompt
   "Given a string, return a user prompt."
@@ -61,35 +61,35 @@
 
 ;; could do (match? ...) in the second one, but = is fast/simple enough.
 (defn- match?
-  "Given user input, secret word, and unvailed word,
+  "Given user input, secret word, and unveiled word,
    return true if user guessed secret word; false, otherwise."
-  ([secret unvailed] (= secret unvailed))
-  ([input secret unvailed]
-  (or (= secret input) (= secret unvailed))))
+  ([secret unveiled] (= secret unveiled))
+  ([input secret unveiled]
+  (or (= secret input) (= secret unveiled))))
 
 (defn- read-guess
-  "Given secret word, unvailed word (partially guessed secret word), 
+  "Given secret word, unveiled word (partially guessed secret word), 
    and turns as a positive integer,
    println hangman drawing if previously missed,
    prompt a user, and read the next line."
-  [secret unvailed turns]
-  (do (when-not (match? secret unvailed) (println (hangman-drawing turns)))
-      (prompt (str "The unvailed word is " unvailed  ". Please enter again."))
+  [secret unveiled turns]
+  (do (when-not (match? secret unveiled) (println (hangman-drawing turns)))
+      (prompt (str "The unveiled word is " unveiled  ". Please enter again."))
       (read-line)))
 
 (defn- hangman-game
-  "Given user input, secret word, already unvailed word,
+  "Given user input, secret word, already unveiled word,
    and turns as a positive integer,
    returns true when a user won the game; false, otherwise,
    while repeatedly asking the user until his/her guessess the secret word."
-  [input secret unvailed turns]
+  [input secret unveiled turns]
   (let [first-char (first input)
-        unvailed   (unvail secret unvailed (first input))
-        match?     (match? input secret unvailed)
+        unveiled   (unveil secret unveiled (first input))
+        match?     (match? input secret unveiled)
         turns      (if (some #(= first-char %) secret) turns (inc turns))]
     (if (or match? (>= turns (dec (count hangman-drawing))))
       match?
-      (hangman-game (read-guess secret unvailed turns) secret unvailed turns))))
+      (hangman-game (read-guess secret unveiled turns) secret unveiled turns))))
 
 (defn -main [& args]
   (let [options (cli args (optional ["-secret" "secret word or phrase" :default (secret)]))
@@ -104,5 +104,3 @@
       (prompt (str "You won! " secret))
       (prompt (str (second (last hangman-drawing)) 
                    "\n\nSorry, you lost :(  The secret word was " secret ". Try again :)")))))
-
-
