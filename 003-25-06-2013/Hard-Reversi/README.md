@@ -11,9 +11,11 @@ Reversi rules in short bullet points:
   which are filled with 4 pieces - 2 pieces per player in a following layout
       (D - dark, L - light)
 
-    L | D
-    -----
-    D | L
+<pre>
+L | D
+-----
+D | L
+</pre>
 
 - player with dark pieces moves first
 - players in turns place a piece with their color on the board 
