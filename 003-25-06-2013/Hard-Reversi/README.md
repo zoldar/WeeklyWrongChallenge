@@ -10,9 +10,11 @@ Reversi rules in short bullet points:
 - the standard starting position is in the group of central four squares 
   which are filled with 4 pieces - 2 pieces per player in a following layout
       (D - dark, L - light)
+
     L | D
     -----
     D | L
+
 - player with dark pieces moves first
 - players in turns place a piece with their color on the board 
   in such a position that there exists at least one straight (horizontal, 
