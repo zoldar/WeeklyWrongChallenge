@@ -27,11 +27,12 @@
 
 (defn game-finished? [game])
 
-(defn create-human-player [side input-fn]
-  (partial human-player side input-fn))
+(defn create-human-player [side input-seq]
+  (partial human-player side input-seq))
 
-(defn human-player [side input-fn board]
-  {:move (input-fn) :move-fn (partial human-player side input-fn)})
+(defn human-player [side input-seq board]
+  (let [[current-input input-seq] ((juxt first rest) input-seq)] 
+    {:move current-input :move-fn (partial human-player side input-seq)}))
 
 (defn create-ai-player [side decision-fn]
   (partial ai-player side [] decision-fn))
@@ -43,7 +44,7 @@
 (defn lazy-input [])
 
 (defn create-human-cli-player [side]
-  (create-human-player side lazy-input))
+  (create-human-player side (lazy-input)))
 
 (defn make-random-decision [side history board]
   [2 3])
