@@ -88,11 +88,10 @@
   (System/exit 0))
 
 (defn play-game [word]
-  (let [game (create-game word (lazy-input take-input))]
-    (doseq [stage game]
-      (cond (game-won? stage) (end-game-success stage)
-            (game-lost? stage) (end-game-fail stage)
-            :else (display-state stage)))))
+  (doseq [stage (create-game word (lazy-input take-input))]
+    (cond (game-won? stage) (end-game-success stage)
+          (game-lost? stage) (end-game-fail stage)
+          :else (display-state stage))))
 
 (defn -main [& [word & _]]
   (play-game word))
