@@ -23,31 +23,60 @@
 ;; - when neither player can make a valid move, the game ends
 ;; - the player with the most pieces on the board at the end of the game wins
 
-(defn valid-move? [board side x y])
+(def empty-board (vec (repeat 8 (vec (repeat 8 :empty)))))
 
-(defn game-finished? [game])
+(defn put-at [board piece [x y]]
+  (assoc-in board [x y] piece))
 
-(defn create-human-player [side input-seq]
-  (partial human-player side input-seq))
+(defn get-at [board [x y]]
+  (get-in board [x y]))
+
+(def basic-board
+  (-> empty-board
+      (put-at :light [3 3])
+      (put-at :light [4 4])
+      (put-at :dark [3 4])
+      (put-at :dark [4 3])))
+
+(defn valid-move? [side board [x y]]
+  true)
+
+(defn make-move [side board [x y :as move]]
+  (when (valid-move? side board move)
+    board))
+
+(defn get-valid-moves [side board]
+  (let [coordinates (for [x (range 8) y (range 8)] [x y])]
+    (filter (partial valid-move? side board) coordinates)))
+
+(defn game-finished? [board]
+  (empty? (mapcat get-valid-moves [:dark :light] (repeat board))))
+
+(defn get-winner [board]
+  (when (game-finished? board) 
+    (->> board 
+         (apply concat)
+         (remove (partial = :empty))
+         frequencies
+         (apply max-key second)
+         first)))
 
 (defn human-player [side input-seq board]
   (let [[current-input input-seq] ((juxt first rest) input-seq)] 
     {:move current-input :move-fn (partial human-player side input-seq)}))
 
-(defn create-ai-player [side decision-fn]
-  (partial ai-player side [] decision-fn))
+(defn create-human-player [side input-seq]
+  (partial human-player side input-seq))
 
 (defn ai-player [side history decision-fn board]
   (let [move-fn (partial ai-player side (conj history board) decision-fn)]
     {:move (decision-fn side history board) :move-fn move-fn}))
 
-(defn lazy-input [])
-
-(defn create-human-cli-player [side]
-  (create-human-player side (lazy-input)))
+(defn create-ai-player [side decision-fn]
+  (partial ai-player side [] decision-fn))
 
 (defn make-random-decision [side history board]
-  [2 3])
+  (rand-nth (get-valid-moves side board)))
 
 (defn create-random-ai-player [side]
   (create-ai-player side make-random-decision))
@@ -57,10 +86,12 @@
    :dark-move-fn (dark-player-constructor :dark)
    :light-move-fn (light-player-constructor :light)})
 
-(defn make-basic-board [])
-
 (defn make-move-or-fail [side move-fn board]
-  {})
+  (let [keyword-fn (fn [suffix] (keyword (str (name side) suffix)))
+        board-keyword (keyword-fn "-board")
+        move-fn-keyword (keyword-fn "-move-fn")
+        [move new-move-fn] (move-fn board)]
+    {board-keyword (make-move board side move) move-fn-keyword new-move-fn}))
 
 (defn game-step [{:keys [board dark-move-fn light-move-fn] :as game-stage}]
   (when-not (game-finished? board)
@@ -72,8 +103,8 @@
                      :light-move-fn light-move-fn}]
       (cons new-stage (lazy-seq (game-step new-stage))))))
 
-(defn create-standard-game [dark-player-constructor light-player-constructor]
-  (let [game-stage (create-initial-game (make-basic-board) 
+(defn create-game [initial-board dark-player-constructor light-player-constructor]
+  (let [game-stage (create-initial-game initial-board 
                                         dark-player-constructor 
                                         light-player-constructor)]
     (cons game-stage (lazy-seq (game-step game-stage)))))
