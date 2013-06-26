@@ -23,10 +23,15 @@
 ;; - when neither player can make a valid move, the game ends
 ;; - the player with the most pieces on the board at the end of the game wins
 
-(def empty-board (vec (repeat 8 (vec (repeat 8 :empty)))))
+(def board-size 8)
+
+(def empty-board (vec (repeat board-size (vec (repeat board-size :empty)))))
 
 (def offsets (for [x (range -1 2) y (range -1 2) 
                    :when (not-every? zero? [x y])] [x y]))
+
+(defn within-boundaries? [position]
+  (every? #(< -1 % board-size) position))
 
 (defn put-at [board piece [x y]]
   (assoc-in board [x y] piece))
@@ -42,7 +47,7 @@
       (put-at :dark [4 3])))
 
 (defn generate-line [start offset]
-  (take-while (fn [position] (every? #(< -1 % 8) position)) 
+  (take-while (fn [position] (within-boundaries? position)) 
               (iterate #(->> % (map + offset) vec) start)))
 
 (defn get-flippable-positions [side board [_ & line]]
@@ -70,7 +75,7 @@
               pieces-to-flip))))
 
 (defn get-valid-moves [side board]
-  (let [coordinates (for [x (range 8) y (range 8)] [x y])]
+  (let [coordinates (for [x (range board-size) y (range board-size)] [x y])]
     (filter (partial valid-move? side board) coordinates)))
 
 (defn game-finished? [board]
@@ -130,10 +135,14 @@
     (let [{:keys [dark-board dark-move-fn]} (make-move-or-fail :dark dark-move-fn board)
           {:keys [light-board light-move-fn]} (make-move-or-fail :light light-move-fn 
                                                                  (or dark-board board))
-          new-stage {:board (or light-board dark-board board) 
-                     :dark-move-fn dark-move-fn
-                     :light-move-fn light-move-fn}]
-      (cons new-stage (lazy-seq (game-step new-stage))))))
+          new-stage-fn (fn [board] {:board board 
+                                    :dark-move-fn dark-move-fn
+                                    :light-move-fn light-move-fn})]
+      (cons (new-stage-fn (or dark-board board)) 
+            (cons (new-stage-fn (or light-board dark-board board)) 
+                  (lazy-seq (game-step (new-stage-fn (or light-board
+                                                         dark-board
+                                                         board)))))))))
 
 (defn create-game [initial-board dark-player-constructor light-player-constructor]
   (let [game-stage (create-initial-game initial-board 
