@@ -62,7 +62,7 @@
   (and (= (get-at board move) :empty) 
        (seq (get-pieces-to-flip side board move))))
 
-(defn make-move [side board [x y :as move]]
+(defn make-move [side board move]
   (when (valid-move? side board move)
     (let [pieces-to-flip (get-pieces-to-flip side board move)]
       (reduce (fn [board position] (put-at board side position)) 
@@ -105,6 +105,13 @@
 
 (defn create-random-ai-player [side]
   (create-ai-player side make-random-decision))
+
+(defn make-aggresive-decision [side history board]
+  (when-let [valid-moves (seq (get-valid-moves side board))] 
+    (apply max-key #(count (get-pieces-to-flip side board %)) valid-moves)))
+
+(defn create-aggresive-ai-player [side]
+  (create-ai-player side make-aggresive-decision))
 
 (defn create-initial-game [initial-board dark-player-constructor light-player-constructor]
   {:board initial-board 
