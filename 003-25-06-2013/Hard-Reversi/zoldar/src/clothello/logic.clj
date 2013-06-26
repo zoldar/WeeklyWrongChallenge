@@ -106,12 +106,12 @@
 (defn create-random-ai-player [side]
   (create-ai-player side make-random-decision))
 
-(defn make-aggresive-decision [side history board]
+(defn make-greedy-decision [side history board]
   (when-let [valid-moves (seq (get-valid-moves side board))] 
     (apply max-key #(count (get-pieces-to-flip side board %)) valid-moves)))
 
-(defn create-aggresive-ai-player [side]
-  (create-ai-player side make-aggresive-decision))
+(defn create-greedy-ai-player [side]
+  (create-ai-player side make-greedy-decision))
 
 (defn create-initial-game [initial-board dark-player-constructor light-player-constructor]
   {:board initial-board 
