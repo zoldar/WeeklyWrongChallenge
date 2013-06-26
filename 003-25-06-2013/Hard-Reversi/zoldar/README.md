@@ -26,6 +26,12 @@ This should result in something similar to:
 
 Doing even only 100 runs seems to be slow but performance is a concern for later on I suppose...
 
+UPDATE: I've added a greedy AI to the mix which proved to be quite easy. It can be used with `create-greedy-ai-player`.
+
+    (frequencies (repeatedly 100 #(-> (create-game classic-board create-greedy-ai-player create-random-ai-player) reverse first :board get-winner)))
+    
+    {:dark 67, :light 33}
+
 ## License
 
 Copyright © 2013 Adrian Gruntkowski
