@@ -83,12 +83,13 @@
 
 (defn get-winner [board]
   (when (game-finished? board) 
-    (->> board 
-         (apply concat)
-         (remove (partial = :empty))
-         frequencies
-         (apply max-key second)
-         first)))
+    (let [{:keys [dark light]} (->> board 
+                                    (apply concat)
+                                    (remove (partial = :empty))
+                                    frequencies)]
+      (cond (> dark light) :dark
+            (> light dark) :light
+            :else nil))))
 
 (defn human-player [side input-seq board]
   (let [[current-input input-seq] ((juxt first rest) input-seq)] 

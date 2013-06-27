@@ -44,7 +44,9 @@
 
 (defn end-game [{:keys [board]}]
   (println "Game finished!")
-  (println (apply str (name (logic/get-winner board)) " wins!"))
+  (if-let [winner (logic/get-winner board)]
+    (println (apply str (name (logic/get-winner board)) " wins!"))
+    (println "It's a tie!"))
   (quit))
 
 (defn play-game [player1 player2]
