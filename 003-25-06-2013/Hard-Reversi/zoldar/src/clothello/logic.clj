@@ -120,32 +120,25 @@
 
 (defn create-initial-game [initial-board dark-player-constructor light-player-constructor]
   {:board initial-board 
-   :dark-move-fn (dark-player-constructor :dark)
-   :light-move-fn (light-player-constructor :light)})
+   :dark {:move-fn (dark-player-constructor :dark)}
+   :light {:move-fn (light-player-constructor :light)}})
 
-(defn make-move-or-fail [side move-fn board]
-  (let [keyword-fn (fn [suffix] (keyword (str (name side) suffix)))
-        board-keyword (keyword-fn "-board")
-        move-fn-keyword (keyword-fn "-move-fn")
-        {:keys [move move-fn]} (move-fn board)]
-    {board-keyword (make-move side board move) move-fn-keyword move-fn}))
+(defn make-move-or-fail [move-fn side board]
+  (let [{:keys [move move-fn]} (move-fn board)]
+    {:new-board (make-move side board move) :move-fn move-fn}))
 
-(defn game-step [{:keys [board dark-move-fn light-move-fn]}]
+(defn game-step [{:keys [board] :as game-stage} side]
   (when-not (game-finished? board)
-    (let [{:keys [dark-board dark-move-fn]} (make-move-or-fail :dark dark-move-fn board)
-          {:keys [light-board light-move-fn]} (make-move-or-fail :light light-move-fn 
-                                                                 (or dark-board board))
-          new-stage-fn (fn [board] {:board board 
-                                    :dark-move-fn dark-move-fn
-                                    :light-move-fn light-move-fn})]
-      (cons (new-stage-fn (or dark-board board)) 
-            (cons (new-stage-fn (or light-board dark-board board)) 
-                  (lazy-seq (game-step (new-stage-fn (or light-board
-                                                         dark-board
-                                                         board)))))))))
+    (let [flipped-side (if (= side :dark) :light :dark)
+          move-fn (-> game-stage side :move-fn)
+          {:keys [new-board move-fn]} (make-move-or-fail move-fn side board)
+          new-stage (-> game-stage 
+                        (assoc :board (or new-board board))
+                        (assoc-in [side :move-fn] move-fn))]
+      (cons new-stage (lazy-seq (game-step new-stage flipped-side))))))
 
 (defn create-game [initial-board dark-player-constructor light-player-constructor]
   (let [game-stage (create-initial-game initial-board 
                                         dark-player-constructor 
                                         light-player-constructor)]
-    (cons game-stage (lazy-seq (game-step game-stage)))))
+    (cons game-stage (lazy-seq (game-step game-stage :dark)))))
