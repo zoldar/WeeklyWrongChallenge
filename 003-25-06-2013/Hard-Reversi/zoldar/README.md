@@ -4,6 +4,22 @@ A game of Reversi/Othello implemented as a CLI app in Clojure for Weekly Wrong C
 
 ## Usage
 
+UPDATE: The game got a basic CLI interface. To start the game, you have to issue a following command:
+
+    lein run [dark-player] [light-player]
+
+Currently available choices for players are: `human`, `random` and `greedy`.
+
+Some examples:
+
+    lein run human human
+
+    lein run human greedy
+
+    lein run random greedy
+
+There is one caveat when playing in interactive (human) mode - although invalid input is rejected, the invalid move is just silently discarded and the game carries on as if there was no move made in a given turn.
+
 For now, there's only game's logic and basic random AI to play with. Human input should be also possible, but interactive version is yet to be written. There's no rendering at the moment. Eventually code will be split among multiple namespaces to not create such a mess.
 
 Basic usage after firing up REPL:
@@ -25,6 +41,12 @@ This should result in something similar to:
     {:light 47, :dark 53}
 
 Doing even only 100 runs seems to be slow but performance is a concern for later on I suppose...
+
+UPDATE: I've added a greedy AI to the mix which proved to be quite easy. It can be used with `create-greedy-ai-player`.
+
+    (frequencies (repeatedly 100 #(-> (create-game classic-board create-greedy-ai-player create-random-ai-player) reverse first :board get-winner)))
+    
+    {:dark 67, :light 33}
 
 ## License
 

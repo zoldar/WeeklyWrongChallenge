@@ -23,10 +23,15 @@
 ;; - when neither player can make a valid move, the game ends
 ;; - the player with the most pieces on the board at the end of the game wins
 
-(def empty-board (vec (repeat 8 (vec (repeat 8 :empty)))))
+(def board-size 8)
+
+(def empty-board (vec (repeat board-size (vec (repeat board-size :empty)))))
 
 (def offsets (for [x (range -1 2) y (range -1 2) 
                    :when (not-every? zero? [x y])] [x y]))
+
+(defn within-boundaries? [position]
+  (every? #(< -1 % board-size) position))
 
 (defn put-at [board piece [x y]]
   (assoc-in board [x y] piece))
@@ -42,7 +47,7 @@
       (put-at :dark [4 3])))
 
 (defn generate-line [start offset]
-  (take-while (fn [position] (every? #(< -1 % 8) position)) 
+  (take-while (fn [position] (within-boundaries? position)) 
               (iterate #(->> % (map + offset) vec) start)))
 
 (defn get-flippable-positions [side board [_ & line]]
@@ -62,7 +67,7 @@
   (and (= (get-at board move) :empty) 
        (seq (get-pieces-to-flip side board move))))
 
-(defn make-move [side board [x y :as move]]
+(defn make-move [side board move]
   (when (valid-move? side board move)
     (let [pieces-to-flip (get-pieces-to-flip side board move)]
       (reduce (fn [board position] (put-at board side position)) 
@@ -70,7 +75,7 @@
               pieces-to-flip))))
 
 (defn get-valid-moves [side board]
-  (let [coordinates (for [x (range 8) y (range 8)] [x y])]
+  (let [coordinates (for [x (range board-size) y (range board-size)] [x y])]
     (filter (partial valid-move? side board) coordinates)))
 
 (defn game-finished? [board]
@@ -78,12 +83,13 @@
 
 (defn get-winner [board]
   (when (game-finished? board) 
-    (->> board 
-         (apply concat)
-         (remove (partial = :empty))
-         frequencies
-         (apply max-key second)
-         first)))
+    (let [{:keys [dark light]} (->> board 
+                                    (apply concat)
+                                    (remove (partial = :empty))
+                                    frequencies)]
+      (cond (> dark light) :dark
+            (> light dark) :light
+            :else nil))))
 
 (defn human-player [side input-seq board]
   (let [[current-input input-seq] ((juxt first rest) input-seq)] 
@@ -106,30 +112,34 @@
 (defn create-random-ai-player [side]
   (create-ai-player side make-random-decision))
 
+(defn make-greedy-decision [side history board]
+  (when-let [valid-moves (seq (get-valid-moves side board))] 
+    (apply max-key #(count (get-pieces-to-flip side board %)) valid-moves)))
+
+(defn create-greedy-ai-player [side]
+  (create-ai-player side make-greedy-decision))
+
 (defn create-initial-game [initial-board dark-player-constructor light-player-constructor]
   {:board initial-board 
-   :dark-move-fn (dark-player-constructor :dark)
-   :light-move-fn (light-player-constructor :light)})
+   :dark {:move-fn (dark-player-constructor :dark)}
+   :light {:move-fn (light-player-constructor :light)}})
 
-(defn make-move-or-fail [side move-fn board]
-  (let [keyword-fn (fn [suffix] (keyword (str (name side) suffix)))
-        board-keyword (keyword-fn "-board")
-        move-fn-keyword (keyword-fn "-move-fn")
-        {:keys [move move-fn]} (move-fn board)]
-    {board-keyword (make-move side board move) move-fn-keyword move-fn}))
+(defn make-move-or-fail [move-fn side board]
+  (let [{:keys [move move-fn]} (move-fn board)]
+    {:new-board (make-move side board move) :move-fn move-fn}))
 
-(defn game-step [{:keys [board dark-move-fn light-move-fn]}]
+(defn game-step [{:keys [board] :as game-stage} side]
   (when-not (game-finished? board)
-    (let [{:keys [dark-board dark-move-fn]} (make-move-or-fail :dark dark-move-fn board)
-          {:keys [light-board light-move-fn]} (make-move-or-fail :light light-move-fn 
-                                                                 (or dark-board board))
-          new-stage {:board (or light-board dark-board board) 
-                     :dark-move-fn dark-move-fn
-                     :light-move-fn light-move-fn}]
-      (cons new-stage (lazy-seq (game-step new-stage))))))
+    (let [flipped-side (if (= side :dark) :light :dark)
+          move-fn (-> game-stage side :move-fn)
+          {:keys [new-board move-fn]} (make-move-or-fail move-fn side board)
+          new-stage (-> game-stage 
+                        (assoc :board (or new-board board))
+                        (assoc-in [side :move-fn] move-fn))]
+      (cons new-stage (lazy-seq (game-step new-stage flipped-side))))))
 
 (defn create-game [initial-board dark-player-constructor light-player-constructor]
   (let [game-stage (create-initial-game initial-board 
                                         dark-player-constructor 
                                         light-player-constructor)]
-    (cons game-stage (lazy-seq (game-step game-stage)))))
+    (cons game-stage (lazy-seq (game-step game-stage :dark)))))
