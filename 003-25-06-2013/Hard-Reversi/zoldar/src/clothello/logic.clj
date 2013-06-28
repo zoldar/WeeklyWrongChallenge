@@ -25,13 +25,18 @@
 
 (def board-size 8)
 
+;; Board has a form of two dimensional vector, where each nested vector
+;; represents a column and values in a nested vectors represent rows
+;; in a given column. The valid values are :dark, :light and :empty.
 (def empty-board (vec (repeat board-size (vec (repeat board-size :empty)))))
 
+;; Offsets for moving around the board in form of vectors: [0 1] [1 1] [1 -1] etc.
 (def offsets (for [x (range -1 2) y (range -1 2) 
                    :when (not-every? zero? [x y])] [x y]))
 
-(defn within-boundaries? [position]
-  (every? #(< -1 % board-size) position))
+(defn within-boundaries? [point]
+  "Check if a given is within board boundaries."
+  (every? #(< -1 % board-size) point))
 
 (defn put-at [board piece [x y]]
   (assoc-in board [x y] piece))
@@ -40,6 +45,7 @@
   (get-in board [x y]))
 
 (def classic-board
+  "Standard initial board layout as stated in rules of a classic Reversi."
   (-> empty-board
       (put-at :light [3 3])
       (put-at :light [4 4])
@@ -47,10 +53,15 @@
       (put-at :dark [4 3])))
 
 (defn generate-line [start offset]
-  (take-while (fn [position] (within-boundaries? position)) 
+  "Generate a series of points representing a line from a given
+start point to the edge of the board along given offset."
+  (take-while within-boundaries? 
               (iterate #(->> % (map + offset) vec) start)))
 
-(defn get-flippable-positions [side board [_ & line]]
+(defn get-flippable-points [side board [_ & line]]
+  "Find all points containing pieces which can flipped along the given
+line of points given a particular board state and side from which
+move is made."
   (let [fields (map (partial get-at board) line)
         flip-check-fn (fn [position] (and (not= side position) 
                                           (not= :empty position)))
@@ -60,14 +71,19 @@
       (take (count flip-candidates) line))))
 
 (defn get-pieces-to-flip [side board move]
+  "Generate lines of points in all possible directions from a given
+starting position and return a collection of all points containing
+pieces to flip."
   (let [lines (map (partial generate-line move) offsets)]
-    (mapcat (partial get-flippable-positions side board) lines)))
+    (mapcat (partial get-flippable-points side board) lines)))
 
 (defn valid-move? [side board move]
   (and (= (get-at board move) :empty) 
        (seq (get-pieces-to-flip side board move))))
 
 (defn make-move [side board move]
+  "Given the move is valid, put the piece at given position and flip all
+the opposite pieces eligible for flipping by game rules."
   (when (valid-move? side board move)
     (let [pieces-to-flip (get-pieces-to-flip side board move)]
       (reduce (fn [board position] (put-at board side position)) 
@@ -75,13 +91,17 @@
               pieces-to-flip))))
 
 (defn get-valid-moves [side board]
+  "Get all valid moves given a board state and side that makes the move."
   (let [coordinates (for [x (range board-size) y (range board-size)] [x y])]
     (filter (partial valid-move? side board) coordinates)))
 
 (defn game-finished? [board]
+  "Check if any side can make a valid move."
   (empty? (mapcat get-valid-moves [:dark :light] (repeat board))))
 
 (defn get-winner [board]
+  "Retrieve a winner given number of the pieces on the board. In case of 
+a tie, return nil."
   (when (game-finished? board) 
     (let [{:keys [dark light]} (->> board 
                                     (apply concat)
@@ -91,44 +111,21 @@
             (> light dark) :light
             :else nil))))
 
-(defn human-player [side input-seq board]
-  (let [[current-input input-seq] ((juxt first rest) input-seq)] 
-    {:move current-input :move-fn (partial human-player side input-seq)}))
-
-(defn create-human-player [side input-seq]
-  (partial human-player side input-seq))
-
-(defn ai-player [side history decision-fn board]
-  (let [move-fn (partial ai-player side (conj history board) decision-fn)]
-    {:move (decision-fn side history board) :move-fn move-fn}))
-
-(defn create-ai-player [side decision-fn]
-  (partial ai-player side [] decision-fn))
-
-(defn make-random-decision [side history board]
-  (when-let [valid-moves (seq (get-valid-moves side board))] 
-    (rand-nth valid-moves)))
-
-(defn create-random-ai-player [side]
-  (create-ai-player side make-random-decision))
-
-(defn make-greedy-decision [side history board]
-  (when-let [valid-moves (seq (get-valid-moves side board))] 
-    (apply max-key #(count (get-pieces-to-flip side board %)) valid-moves)))
-
-(defn create-greedy-ai-player [side]
-  (create-ai-player side make-greedy-decision))
-
 (defn create-initial-game [initial-board dark-player-constructor light-player-constructor]
+  "Initial game state creation helper."
   {:board initial-board 
    :dark {:move-fn (dark-player-constructor :dark)}
    :light {:move-fn (light-player-constructor :light)}})
 
 (defn make-move-or-fail [move-fn side board]
+  "Given player's move function, side which he's playing on and board state,
+return new board state (or nil if move is incorrect) and new move function."
   (let [{:keys [move move-fn]} (move-fn board)]
     {:new-board (make-move side board move) :move-fn move-fn}))
 
 (defn game-step [{:keys [board] :as game-stage} side]
+  "Create a new game state, alternating the sides with each run until the game
+is finished."
   (when-not (game-finished? board)
     (let [flipped-side (if (= side :dark) :light :dark)
           move-fn (-> game-stage side :move-fn)
@@ -139,6 +136,7 @@
       (cons new-stage (lazy-seq (game-step new-stage flipped-side))))))
 
 (defn create-game [initial-board dark-player-constructor light-player-constructor]
+  "Game sequence constructor."
   (let [game-stage (create-initial-game initial-board 
                                         dark-player-constructor 
                                         light-player-constructor)]
