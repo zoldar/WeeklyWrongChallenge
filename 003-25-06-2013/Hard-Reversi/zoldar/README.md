@@ -45,9 +45,9 @@ The player constructor which is passed to the game's constructor
 must accept side for wich to play as an argument.
 Its return value must be a move making function accepting a board as an
 argument and returning a map with two keys as a result:
-    * `:move` associated with a move to make in a form of a vector of two 
+- `:move` associated with a move to make in a form of a vector of two 
   integers
-    * `:move-fn` associated with a function fulfilling the same contract
+- `:move-fn` associated with a function fulfilling the same contract
 
 There's a convenience constructor in the player namespace - create-ai-player
 along with ai-player, preserving a history of board states in a vector. 
