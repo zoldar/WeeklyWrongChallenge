@@ -77,13 +77,3 @@ as command-line arguments."
     (if (and player1-fn player2-fn)
       (play-game player1-fn player2-fn)
       (println "One or both players not found."))))
-
-
-
-
-
-
-
-
-
-
