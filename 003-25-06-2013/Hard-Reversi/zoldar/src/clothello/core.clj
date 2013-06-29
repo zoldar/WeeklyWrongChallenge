@@ -68,8 +68,22 @@ and render game's state along the way."
     (when (logic/game-finished? board) 
       (end-game game-stage))))
 
-(defn -main [& [player1 player2 & _]]
+(defn -main [player1 player2]
   "Player's constructors are retrieved from players registry by names passed 
 as command-line arguments."
-  (let [players (player/get-players)]
-   (play-game (get players player1) (get players player2))))
+  (let [players (player/get-players)
+        player1-fn (get players player1)
+        player2-fn (get players player2)]
+    (if (and player1-fn player2-fn)
+      (play-game player1-fn player2-fn)
+      (println "One or both players not found."))))
+
+
+
+
+
+
+
+
+
+
