@@ -26,7 +26,6 @@ input sequence."
 
 (defn take-input [side]
   "Input function tailored for command line interface."
-  (println (apply str "It's " (name side) "'s turn."))
   (println "Type a position (two numbers delimited with space) or type quit: ")
   (let [position (read-line)]
     (when (= position "quit")
@@ -49,6 +48,9 @@ input sequence."
                 board))
   (println ""))
 
+(defn render-turn [turn]
+  (println (apply str "It's " (name turn) "'s turn.")))
+
 (defn end-game [{:keys [board]}]
   (println "Game finished!")
   (if-let [winner (logic/get-winner board)]
@@ -59,9 +61,10 @@ input sequence."
 (defn play-game [player1 player2]
   "Initiate the lazy game sequence with given player types 
 and render game's state along the way."
-  (doseq [{:keys [board] :as game-stage} 
+  (doseq [{:keys [board turn] :as game-stage} 
           (logic/create-game logic/classic-board player1 player2)]
     (render-board board)
+    (render-turn turn)
     (when (logic/game-finished? board) 
       (end-game game-stage))))
 
