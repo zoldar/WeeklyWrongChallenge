@@ -103,10 +103,11 @@ the opposite pieces eligible for flipping by game rules."
   "Retrieve a winner given number of the pieces on the board. In case of 
 a tie, return nil."
   (when (game-finished? board) 
-    (let [{:keys [dark light]} (->> board 
-                                    (apply concat)
-                                    (remove (partial = :empty))
-                                    frequencies)]
+    (let [{:keys [dark light] :or {dark 0 light 0}} 
+          (->> board 
+               (apply concat)
+               (remove (partial = :empty))
+               frequencies)]
       (cond (> dark light) :dark
             (> light dark) :light
             :else nil))))
