@@ -103,19 +103,24 @@ the opposite pieces eligible for flipping by game rules."
   "Retrieve a winner given number of the pieces on the board. In case of 
 a tie, return nil."
   (when (game-finished? board) 
-    (let [{:keys [dark light]} (->> board 
-                                    (apply concat)
-                                    (remove (partial = :empty))
-                                    frequencies)]
+    (let [{:keys [dark light] :or {dark 0 light 0}} 
+          (->> board 
+               (apply concat)
+               (remove (partial = :empty))
+               frequencies)]
       (cond (> dark light) :dark
             (> light dark) :light
             :else nil))))
 
-(defn create-initial-game [initial-board dark-player-constructor light-player-constructor]
+(defn create-initial-game [initial-board 
+                           dark-player-constructor 
+                           light-player-constructor 
+                           first-turn]
   "Initial game state creation helper."
   {:board initial-board 
    :dark {:move-fn (dark-player-constructor :dark)}
-   :light {:move-fn (light-player-constructor :light)}})
+   :light {:move-fn (light-player-constructor :light)}
+   :turn first-turn})
 
 (defn make-move-or-fail [move-fn side board]
   "Given player's move function, side which he's playing on and board state,
@@ -123,21 +128,24 @@ return new board state (or nil if move is incorrect) and new move function."
   (let [{:keys [move move-fn]} (move-fn board)]
     {:new-board (make-move side board move) :move-fn move-fn}))
 
-(defn game-step [{:keys [board] :as game-stage} side]
-  "Create a new game state, alternating the sides with each run until the game
+(defn game-step [{:keys [board turn] :as game-stage}]
+  "Create a new game state, alternating the sides with each turn until the game
 is finished."
   (when-not (game-finished? board)
-    (let [flipped-side (if (= side :dark) :light :dark)
+    (let [side turn
+          flipped-side (if (= side :dark) :light :dark)
           move-fn (-> game-stage side :move-fn)
           {:keys [new-board move-fn]} (make-move-or-fail move-fn side board)
           new-stage (-> game-stage 
                         (assoc :board (or new-board board))
+                        (assoc :turn flipped-side)
                         (assoc-in [side :move-fn] move-fn))]
-      (cons new-stage (lazy-seq (game-step new-stage flipped-side))))))
+      (cons new-stage (lazy-seq (game-step new-stage))))))
 
 (defn create-game [initial-board dark-player-constructor light-player-constructor]
   "Game sequence constructor."
   (let [game-stage (create-initial-game initial-board 
                                         dark-player-constructor 
-                                        light-player-constructor)]
-    (cons game-stage (lazy-seq (game-step game-stage :dark)))))
+                                        light-player-constructor
+                                        :dark)]
+    (cons game-stage (lazy-seq (game-step game-stage)))))

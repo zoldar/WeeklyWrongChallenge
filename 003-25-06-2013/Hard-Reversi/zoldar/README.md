@@ -18,21 +18,27 @@ Some examples:
 
     lein run random greedy
 
-There is one caveat when playing in interactive (human) mode - although invalid input is rejected, the invalid move is just silently discarded and the game carries on as if there was no move made in a given turn.
+There is one caveat when playing in interactive (human) mode - although invalid input is rejected, 
+the invalid move is just silently discarded and the game carries on as if there was no move made in 
+a given turn.
 
 It's also possible to play the game directly from REPL. Basic usage after firing up REPL:
 
     (use 'clothello.logic)
-    (create-game classic-board create-random-ai-player create-random-ai-player)
+    (require '[clothello.ai.simple :as ai])
+    (create-game classic-board ai/create-random-ai-player ai/create-greedy-ai-player)
     
 To get just the winner for a given game (nil result will mean a tie):
 
-    (-> (create-game classic-board create-random-ai-player create-random-ai-player)
+    (-> (create-game classic-board ai/create-random-ai-player ai/create-greedy-ai-player)
         reverse first :board get-winner)
 
 For statistical breakdown on games won by every side:
 
-    (frequencies (repeatedly 100 #(-> (create-game classic-board create-random-ai-player create-random-ai-player) reverse first :board get-winner)))
+    (frequencies (repeatedly 100 #(-> (create-game classic-board 
+    		 	     	      		   ai/create-random-ai-player 
+						   ai/create-random-ai-player) 
+    		 	     	      reverse first :board get-winner)))
 
 This should result in something similar to:
 
@@ -49,14 +55,15 @@ argument and returning a map with two keys as a result:
   integers
 - `:move-fn` associated with a function fulfilling the same contract
 
-There's a convenience constructor in the player namespace - create-ai-player
-along with ai-player, preserving a history of board states in a vector. 
-It's entirely optional.
+There's a convenience constructor in the `clothello.player` namespace 
+- `create-ai-player` along with `ai-player`, preserving a history of 
+board states in a vector. It's entirely optional.
 
 Player AI definitions (constructors along with all auxiliary functions)
 must be put in a namespace under `clothello.ai.*`. Constructors must be 
 registered inside those namespaces to be available
-in the game. Registration is made with `register-player` function.
+in the game. Registration is made with `clothello.player/register-player` 
+function.
 
 The example AI implementations are available under `clothello.ai.simple`.
 
