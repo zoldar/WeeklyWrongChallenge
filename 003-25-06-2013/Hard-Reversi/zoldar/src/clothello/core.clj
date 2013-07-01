@@ -43,9 +43,9 @@ input sequence."
     (lazy-seq (step))))
 
 (defn render-board [board]
-  (dorun (apply map (fn [& columns] 
-                      (println (apply str (map render-symbols columns)))) 
-                board))
+  (doseq [x (range logic/board-size)]
+    (println (apply str (map (fn [y] (render-symbols (logic/get-at board [x y]))) 
+                             (range logic/board-size)))))
   (println ""))
 
 (defn render-turn [turn]

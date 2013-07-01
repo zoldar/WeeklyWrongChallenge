@@ -25,10 +25,9 @@
 
 (def board-size 8)
 
-;; Board has a form of two dimensional vector, where each nested vector
-;; represents a column and values in a nested vectors represent rows
-;; in a given column. The valid values are :dark, :light and :empty.
-(def empty-board (vec (repeat board-size (vec (repeat board-size :empty)))))
+;; Board has a form of a flat vector which is `board-size` squared long. 
+;; The valid values in the vector are :dark, :light and :empty.
+(def empty-board (vec (repeat (* board-size board-size) :empty)))
 
 ;; Offsets for moving around the board in form of vectors: [0 1] [1 1] [1 -1] etc.
 (def offsets (for [x (range -1 2) y (range -1 2) 
@@ -39,10 +38,13 @@
   (every? #(< -1 % board-size) point))
 
 (defn put-at [board piece [x y]]
-  (assoc-in board [x y] piece))
+  (assoc board (+ (* board-size x) y) piece))
 
 (defn get-at [board [x y]]
-  (get-in board [x y]))
+  (nth board (+ (* board-size x) y)))
+
+(defn board-seq [board]
+  (for [x (range board-size) y (range board-size)] (get-at board [x y])))
 
 (def classic-board
   "Standard initial board layout as stated in rules of a classic Reversi."
@@ -78,7 +80,8 @@ pieces to flip."
     (mapcat (partial get-flippable-points side board) lines)))
 
 (defn valid-move? [side board move]
-  (and (= (get-at board move) :empty) 
+  (and move
+       (= (get-at board move) :empty) 
        (seq (get-pieces-to-flip side board move))))
 
 (defn make-move [side board move]
@@ -105,7 +108,7 @@ a tie, return nil."
   (when (game-finished? board) 
     (let [{:keys [dark light] :or {dark 0 light 0}} 
           (->> board 
-               (apply concat)
+               board-seq
                (remove (partial = :empty))
                frequencies)]
       (cond (> dark light) :dark

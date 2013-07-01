@@ -4,7 +4,7 @@
             [table.core :refer [table]]))
 
 (defn benchmark-players [player1 player2]
-  (frequencies (repeatedly 100 #(-> (logic/create-game logic/classic-board 
+  (frequencies (repeatedly 10 #(-> (logic/create-game logic/classic-board 
                                                        player1 player2) 
                                     reverse 
                                     first 
@@ -12,8 +12,8 @@
                                     logic/get-winner))))
 
 (defn render-ratio [ratios name1 name2]
-  (if-let [[ratio1 ratio2] (get ratios [name1 name2])]
-    (str ratio1 ":" ratio2)
+  (if-let [[wins1 wins2] (get ratios [name1 name2])]
+    (str (or wins1 0) ":" (or wins2 0))
     "X"))
 
 (defn render-table [names ratios]
