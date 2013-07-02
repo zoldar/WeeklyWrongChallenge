@@ -79,9 +79,16 @@ pieces to flip."
   (let [lines (map (partial generate-line move) offsets)]
     (mapcat (partial get-flippable-points side board) lines)))
 
+(defn has-opposite-neighbors? [side board move]
+  (let [opposite-side (if (= side :dark) :light :dark)
+        neighbor-points (->> (map (partial map + move) offsets) (filter within-boundaries?))
+        neighbor-pieces (map (partial get-at board) neighbor-points)]
+    ((set neighbor-pieces) opposite-side)))
+
 (defn valid-move? [side board move]
   (and move
        (= (get-at board move) :empty) 
+       (has-opposite-neighbors? side board move)
        (seq (get-pieces-to-flip side board move))))
 
 (defn make-move [side board move]
