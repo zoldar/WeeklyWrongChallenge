@@ -28,8 +28,9 @@
 (defn- put-at [board [x y] piece]
   (assoc board (+ (* board-size x) y) piece))
 
-(defn- get-at [board [x y]]
-  (nth board (+ (* board-size x) y)))
+(defn- get-at 
+  ([board [x y] not-found]
+     (nth board (+ (* board-size x) y) not-found)))
 
 ;; Now this is entirely for the purpose of an exercise, but to make code
 ;; more idiomatic, I wanted to use more standard functions for board
@@ -45,19 +46,16 @@
 (deftype FlatBoard [board]
   clojure.lang.Associative
   (containsKey [_ key]
-    (let [[x y] key]
-      (< (* x y) (count board))))
+    (not (nil? (get-at board key nil))))
   (entryAt [_ key]
-    [key (get-at board key)])
+    [key (get-at board key nil)])
   (assoc [this key val]
     (FlatBoard. (put-at board key val)))
   clojure.lang.ILookup
   (valAt [_ key]
-    (get-at board key))
+    (get-at board key nil))
   (valAt [this key not-found]
-    (if (.containsKey this)
-      (get-at board key)
-      not-found))
+    (get-at board key not-found))
   Object
   (toString [_] (str board)))
 
