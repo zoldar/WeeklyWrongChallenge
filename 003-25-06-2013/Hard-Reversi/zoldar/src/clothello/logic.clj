@@ -46,7 +46,7 @@
   clojure.lang.Associative
   (containsKey [_ key]
     (let [[x y] key]
-      (< (* x y) (* board-size board-size))))
+      (< (* x y) (count board))))
   (entryAt [_ key]
     [key (get-at board key)])
   (assoc [this key val]
