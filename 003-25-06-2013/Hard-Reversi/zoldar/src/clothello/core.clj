@@ -44,7 +44,7 @@ input sequence."
 
 (defn render-board [board]
   (doseq [x (range logic/board-size)]
-    (println (apply str (map (fn [y] (render-symbols (logic/get-at board [x y]))) 
+    (println (apply str (map (fn [y] (render-symbols (get board [x y])))
                              (range logic/board-size)))))
   (println ""))
 

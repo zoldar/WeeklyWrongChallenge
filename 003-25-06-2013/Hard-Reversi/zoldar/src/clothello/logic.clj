@@ -25,9 +25,46 @@
 
 (def board-size 8)
 
-;; Board has a form of a flat vector which is `board-size` squared long. 
-;; The valid values in the vector are :dark, :light and :empty.
-(def empty-board (vec (repeat (* board-size board-size) :empty)))
+(defn- put-at [board [x y] piece]
+  (assoc board (+ (* board-size x) y) piece))
+
+(defn- get-at [board [x y]]
+  (nth board (+ (* board-size x) y)))
+
+;; Now this is entirely for the purpose of an exercise, but to make code
+;; more idiomatic, I wanted to use more standard functions for board
+;; interaction than get-at and put-at. 
+;; The idea is that while interface for working with board is uniform and idiomatic,
+;; the implementation may be easily swapped. For example, when using standard
+;; map for the board where keys are vectors with coordinates and values
+;; are keywords describing given board's field contents, nothing has to be
+;; changed.
+;;
+;; Had to use `deftype`, because a record already implements Associative,
+;; ILookup and many others.
+(deftype FlatBoard [board]
+  clojure.lang.Associative
+  (containsKey [_ key]
+    (let [[x y] key]
+      (< (* x y) (* board-size board-size))))
+  (entryAt [_ key]
+    [key (get-at board key)])
+  (assoc [this key val]
+    (FlatBoard. (put-at board key val)))
+  clojure.lang.ILookup
+  (valAt [_ key]
+    (get-at board key))
+  (valAt [this key not-found]
+    (if (.containsKey this)
+      (get-at board key)
+      not-found))
+  Object
+  (toString [_] (str board)))
+
+;; Initial board for FlatBoard implementation, where the board is represented
+;; as a flat vector of a length of board-size squared where every value represents
+;; contents of a given board's field.
+(def empty-board (FlatBoard. (vec (repeat (* board-size board-size) :empty))))
 
 ;; Offsets for moving around the board in form of vectors: [0 1] [1 1] [1 -1] etc.
 (def offsets (for [x (range -1 2) y (range -1 2) 
@@ -37,22 +74,16 @@
   "Check if a given is within board boundaries."
   (every? #(< -1 % board-size) point))
 
-(defn put-at [board piece [x y]]
-  (assoc board (+ (* board-size x) y) piece))
-
-(defn get-at [board [x y]]
-  (nth board (+ (* board-size x) y)))
-
 (defn board-seq [board]
-  (for [x (range board-size) y (range board-size)] (get-at board [x y])))
+  (for [x (range board-size) y (range board-size)] (get board [x y])))
 
 (def classic-board
   "Standard initial board layout as stated in rules of a classic Reversi."
   (-> empty-board
-      (put-at :light [3 3])
-      (put-at :light [4 4])
-      (put-at :dark [3 4])
-      (put-at :dark [4 3])))
+      (assoc [3 3] :light)
+      (assoc [4 4] :light)
+      (assoc [3 4] :dark)
+      (assoc [4 3] :dark)))
 
 (defn generate-line [start offset]
   "Generate a series of points representing a line from a given
@@ -64,7 +95,7 @@ start point to the edge of the board along given offset."
   "Find all points containing pieces which can flipped along the given
 line of points given a particular board state and side from which
 move is made."
-  (let [fields (map (partial get-at board) line)
+  (let [fields (map (partial get board) line)
         flip-check-fn (fn [position] (and (not= side position) 
                                           (not= :empty position)))
         flip-candidates (take-while flip-check-fn fields)
@@ -82,12 +113,12 @@ pieces to flip."
 (defn has-opposite-neighbors? [side board move]
   (let [opposite-side (if (= side :dark) :light :dark)
         neighbor-points (->> (map (partial map + move) offsets) (filter within-boundaries?))
-        neighbor-pieces (map (partial get-at board) neighbor-points)]
+        neighbor-pieces (map (partial get board) neighbor-points)]
     ((set neighbor-pieces) opposite-side)))
 
 (defn valid-move? [side board move]
   (and move
-       (= (get-at board move) :empty) 
+       (= (get board move) :empty) 
        (has-opposite-neighbors? side board move)
        (seq (get-pieces-to-flip side board move))))
 
@@ -96,8 +127,8 @@ pieces to flip."
 the opposite pieces eligible for flipping by game rules."
   (when (valid-move? side board move)
     (let [pieces-to-flip (get-pieces-to-flip side board move)]
-      (reduce (fn [board position] (put-at board side position)) 
-              (put-at board side move) 
+      (reduce (fn [board position] (assoc board position side)) 
+              (assoc board move side)
               pieces-to-flip))))
 
 (defn get-valid-moves [side board]
